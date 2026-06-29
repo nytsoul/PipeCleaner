@@ -1,0 +1,243 @@
+@import "tailwindcss";
+
+/* ============================================
+   PipeBloom – Design System Tokens
+   ============================================ */
+
+:root {
+  /* Brand Colors */
+  --primary: #114C5A;
+  --primary-foreground: #ffffff;
+  --secondary: #172B36;
+  --secondary-foreground: #ffffff;
+  --accent: #FFC801;
+  --accent-foreground: #172B36;
+  --accent-orange: #FF9932;
+
+  /* Semantic Colors */
+  --background: #F1F6F4;
+  --foreground: #172B36;
+  --card: #ffffff;
+  --card-foreground: #172B36;
+  --muted: #D9E8E2;
+  --muted-foreground: #5a7a6e;
+  --border: #c8dcd4;
+  --input: #c8dcd4;
+  --ring: #114C5A;
+
+  /* Surface Colors */
+  --surface: #D9E8E2;
+  --surface-foreground: #172B36;
+
+  /* Status Colors */
+  --destructive: #e11d48;
+  --destructive-foreground: #ffffff;
+  --success: #16a34a;
+  --warning: #f59e0b;
+
+  /* Radius */
+  --radius: 0.75rem;
+
+  /* Spacing */
+  --spacing: 0.25rem;
+}
+
+.dark {
+  --primary: #2da3b8;
+  --primary-foreground: #ffffff;
+  --secondary: #1e3a47;
+  --secondary-foreground: #e8f4f0;
+  --accent: #FFC801;
+  --accent-foreground: #172B36;
+  --accent-orange: #FF9932;
+
+  --background: #0f1c22;
+  --foreground: #e8f4f0;
+  --card: #172B36;
+  --card-foreground: #e8f4f0;
+  --muted: #1e3a47;
+  --muted-foreground: #8baaa0;
+  --border: #2a4a58;
+  --input: #2a4a58;
+  --ring: #2da3b8;
+
+  --surface: #1e3a47;
+  --surface-foreground: #e8f4f0;
+
+  --destructive: #fb7185;
+  --destructive-foreground: #ffffff;
+  --success: #4ade80;
+  --warning: #fbbf24;
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-orange: var(--accent-orange);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  --font-heading: "JetBrains Mono", monospace;
+  --font-body: "Inter", sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
+  --radius-2xl: calc(var(--radius) + 16px);
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   Typography
+   ============================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--foreground);
+  letter-spacing: -0.02em;
+}
+
+/* ============================================
+   Glassmorphism Utilities
+   ============================================ */
+
+.glass {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass {
+  background: rgba(15, 28, 34, 0.8);
+  border: 1px solid rgba(45, 163, 184, 0.15);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.dark .glass-strong {
+  background: rgba(15, 28, 34, 0.92);
+  border: 1px solid rgba(45, 163, 184, 0.2);
+}
+
+/* ============================================
+   Custom Scrollbar
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease infinite;
+}
+
+/* ============================================
+   Selection
+   ============================================ */
+
+::selection {
+  background: rgba(17, 76, 90, 0.2);
+  color: var(--foreground);
+}
+
+.dark ::selection {
+  background: rgba(45, 163, 184, 0.3);
+}
