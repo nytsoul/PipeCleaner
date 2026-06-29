@@ -1,60 +1,73 @@
+"use client";
+
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, ShoppingBag } from "lucide-react";
+import { CheckCircle2, Package, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function CheckoutSuccessPage() {
-  const orderId = `ORD-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
+function SuccessContent() {
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading/verifying order
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 space-y-6">
+        <div className="h-16 w-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xl font-medium animate-pulse">Verifying your order...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-[70vh] flex-col items-center justify-center px-4 py-24">
-      <div className="w-full max-w-md text-center space-y-6">
-        <div className="flex justify-center">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-500 ring-8 ring-green-50 dark:ring-green-900/10">
-            <CheckCircle2 className="h-12 w-12" />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
-            Order Confirmed!
-          </h1>
-          <p className="text-muted-foreground">
-            Thank you for your purchase. We&apos;ve received your order and are
-            getting it ready to be shipped.
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-muted-foreground">
-              Order Number
-            </span>
-            <span className="font-heading text-xl font-bold text-foreground">
-              {orderId}
-            </span>
-          </div>
-          
-          <div className="mt-6 space-y-3">
-            <p className="text-sm text-muted-foreground">
-              We&apos;ll send a confirmation email with your order details and tracking info once it ships.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3 sm:flex-row justify-center pt-4">
-          <Button asChild variant="outline" className="h-12 px-8 rounded-xl">
-            <Link href="/profile">
-              View Order Status
-            </Link>
-          </Button>
-          <Button asChild className="h-12 px-8 rounded-xl gap-2">
-            <Link href="/shop">
-              <ShoppingBag className="h-4 w-4" />
-              Continue Shopping
-            </Link>
-          </Button>
+    <div className="max-w-2xl mx-auto px-4 py-24 text-center">
+      <div className="mb-8 flex justify-center">
+        <div className="h-24 w-24 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center animate-bounce-short">
+          <CheckCircle2 className="h-12 w-12" />
         </div>
       </div>
+      
+      <h1 className="text-4xl font-heading font-bold mb-4">Payment Successful!</h1>
+      <p className="text-muted-foreground text-lg mb-8">
+        Thank you for your purchase. Your handcrafted items are being prepared with love.
+      </p>
+
+      {orderId && (
+        <div className="bg-muted rounded-xl p-6 mb-8 inline-block text-left">
+          <p className="text-sm text-muted-foreground mb-1">Order Reference ID</p>
+          <p className="font-mono font-bold text-lg">{orderId}</p>
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <Link href="/profile/orders">
+          <Button variant="outline" size="lg" className="gap-2 w-full sm:w-auto">
+            <Package className="h-4 w-4" /> Track Order
+          </Button>
+        </Link>
+        <Link href="/shop">
+          <Button size="lg" className="gap-2 w-full sm:w-auto">
+            Continue Shopping <ArrowRight className="h-4 w-4" />
+          </Button>
+        </Link>
+      </div>
     </div>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <SuccessContent />
+    </Suspense>
   );
 }

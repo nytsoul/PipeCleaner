@@ -126,17 +126,22 @@ model ProductImage {
 }
 
 model Order {
-  id            String      @id @default(cuid())
-  userId        String
-  user          User        @relation(fields: [userId], references: [id])
-  status        String      @default("PENDING") // PENDING, APPROVED, CANCELLED, DELIVERED
-  totalAmount   Float
-  paymentMethod String      @default("STRIPE")
-  paymentStatus String      @default("UNPAID")
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  status          String      @default("PENDING") // PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+  totalAmount     Float
+  subtotal        Float       @default(0)
+  tax             Float       @default(0)
+  shipping        Float       @default(0)
+  discount        Float       @default(0)
+  paymentMethod   String      @default("STRIPE") // STRIPE, RAZORPAY
+  paymentStatus   String      @default("UNPAID") // UNPAID, PAID, REFUNDED
+  transactionId   String?     // Stripe PaymentIntent ID or Razorpay Order ID
   shippingAddress String?
-  orderItems    OrderItem[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  orderItems      OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
 model OrderItem {
@@ -147,6 +152,7 @@ model OrderItem {
   product   Product  @relation(fields: [productId], references: [id])
   quantity  Int
   price     Float
+  variant   String?  // e.g. color chosen
 }
 
 model Review {

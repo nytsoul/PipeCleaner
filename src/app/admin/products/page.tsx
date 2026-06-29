@@ -17,14 +17,18 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In a real implementation, we would fetch from /api/products
-    // For now, setting mock data
-    setProducts([
-      { id: "1", title: "Rose Bouquet", price: 45.0, stock: 10, category: { name: "Bouquets" } },
-      { id: "2", title: "Tulip Pot", price: 35.0, stock: 5, category: { name: "Flower Pots" } },
-      { id: "3", title: "Sunflower Keychain", price: 12.0, stock: 25, category: { name: "Keychains" } },
-    ]);
-    setLoading(false);
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch("/api/products");
+        const data = await res.json();
+        setProducts(data.items || []);
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
   }, []);
 
   return (
@@ -97,14 +101,12 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
+                        <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors cursor-pointer">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
+                          <DropdownMenuItem>
                             <Link href={`/admin/products/${product.id}/edit`} className="flex items-center gap-2 cursor-pointer">
                               <Edit className="h-4 w-4" /> Edit
                             </Link>

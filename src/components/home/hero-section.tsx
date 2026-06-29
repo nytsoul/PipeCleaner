@@ -97,15 +97,18 @@ export function HeroSection() {
               <motion.div
                 animate={{ y: [-8, 8, -8] }}
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                className="relative aspect-square overflow-hidden rounded-3xl shadow-2xl shadow-black/20"
+                className="aspect-square overflow-hidden rounded-3xl shadow-2xl shadow-black/20"
               >
-                <Image
-                  src="/images/products/tulip-flower-pot.png"
-                  alt="Handmade Tulip Flower Pot"
-                  fill
-                  className="object-cover"
-                  priority
-                />
+                <div className="relative w-full h-full">
+                  <Image
+                    src="/images/products/tulip-flower-pot.png"
+                    alt="Handmade Tulip Flower Pot"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    priority
+                  />
+                </div>
               </motion.div>
 
               {/* Floating Cards */}

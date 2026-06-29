@@ -1,0 +1,14 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const CouponController_1 = require("../controllers/CouponController");
+const authMiddleware_1 = require("../middlewares/authMiddleware");
+const router = express_1.default.Router();
+const couponController = new CouponController_1.CouponController();
+router.post('/validate', couponController.validateCoupon);
+router.use(authMiddleware_1.protect, (0, authMiddleware_1.authorize)('admin'));
+router.post('/', couponController.createCoupon);
+exports.default = router;

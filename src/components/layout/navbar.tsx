@@ -6,16 +6,17 @@ import { motion, AnimatePresence } from "motion/react";
 import { Search, Heart, ShoppingBag, User, Menu, X, Flower2, LogOut, LayoutDashboard } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { ThemeToggle } from "./theme-toggle";
-import { useCart } from "@/context/cart-context";
-import { useWishlist } from "@/context/wishlist-context";
+import { useCartStore } from "@/store/useCartStore";
 import { NAV_LINKS, SITE_NAME } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { totalItems } = useCart();
-  const { totalItems: wishlistCount } = useWishlist();
+  const cart = useCartStore((state) => state.cart);
+  const wishlist = useCartStore((state) => state.wishlist);
+  const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+  const wishlistCount = wishlist.length;
   const { data: session, status } = useSession();
 
   useEffect(() => {

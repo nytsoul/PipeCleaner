@@ -1,255 +1,205 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { motion } from "motion/react";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
+import { Filter, ChevronDown, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { ProductCard } from "@/components/product/product-card";
-import { SectionHeader } from "@/components/shared/section-header";
-import { products } from "@/data/products";
-import { categories } from "@/data/categories";
-import { SORT_OPTIONS } from "@/lib/constants";
-import type { CategorySlug } from "@/types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function ShopPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategories, setSelectedCategories] = useState<CategorySlug[]>([]);
-  const [sortBy, setSortBy] = useState("newest");
-  const [showFilters, setShowFilters] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  
+  // Filters
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [sort, setSort] = useState("newest");
+  
+  const observerTarget = useRef(null);
 
-  const toggleCategory = (slug: CategorySlug) => {
-    setSelectedCategories((prev) =>
-      prev.includes(slug)
-        ? prev.filter((c) => c !== slug)
-        : [...prev, slug]
+  const fetchProducts = async (cursor?: string, reset = false) => {
+    try {
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (category) params.append("category", category);
+      if (sort) params.append("sort", sort);
+      if (cursor) params.append("cursor", cursor);
+      params.append("limit", "12");
+
+      const res = await fetch(`/api/products?${params.toString()}`);
+      const data = await res.json();
+      
+      if (reset) {
+        setProducts(data.items);
+      } else {
+        setProducts(prev => [...prev, ...data.items]);
+      }
+      setNextCursor(data.nextCursor || null);
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    fetchProducts(undefined, true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, category, sort]); // Refresh when filters change
+
+  // Infinite Scroll using IntersectionObserver
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && nextCursor && !loadingMore && !loading) {
+          setLoadingMore(true);
+          fetchProducts(nextCursor);
+        }
+      },
+      { threshold: 1.0 }
     );
-  };
-
-  const filteredProducts = useMemo(() => {
-    let result = [...products];
-
-    // Search filter
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.tags.some((t) => t.includes(q))
-      );
+    
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
     }
 
-    // Category filter
-    if (selectedCategories.length > 0) {
-      result = result.filter((p) => selectedCategories.includes(p.category));
-    }
-
-    // Sort
-    switch (sortBy) {
-      case "price-asc":
-        result.sort((a, b) => a.price - b.price);
-        break;
-      case "price-desc":
-        result.sort((a, b) => b.price - a.price);
-        break;
-      case "popular":
-        result.sort((a, b) => b.reviewCount - a.reviewCount);
-        break;
-      case "rating":
-        result.sort((a, b) => b.rating - a.rating);
-        break;
-      default:
-        result.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-    }
-
-    return result;
-  }, [searchQuery, selectedCategories, sortBy]);
-
-  const clearFilters = () => {
-    setSearchQuery("");
-    setSelectedCategories([]);
-    setSortBy("newest");
-  };
-
-  const hasActiveFilters =
-    searchQuery || selectedCategories.length > 0 || sortBy !== "newest";
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [nextCursor, loadingMore, loading]);
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Banner */}
-      <section className="bg-gradient-to-br from-primary/5 to-muted py-12 lg:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SectionHeader
-            badge="Shop"
-            title="All Products"
-            description="Explore our complete collection of handcrafted pipe cleaner gifts"
-          />
-
-          {/* Search + Filter Bar */}
-          <div className="mx-auto flex max-w-2xl items-center gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-12 pl-11 rounded-xl"
-              />
-            </div>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => setShowFilters(!showFilters)}
-              className="h-12 gap-2 rounded-xl lg:hidden"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              Filter
-            </Button>
-          </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-4xl font-heading font-bold tracking-tight">Our Collection</h1>
+          <p className="text-muted-foreground mt-2">Discover beautiful handmade pipe cleaner gifts.</p>
         </div>
-      </section>
+        
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <Input 
+            placeholder="Search products..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-xl border border-input bg-background px-4 py-2.5 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground gap-2 cursor-pointer">
+              Sort by: {sort === "newest" ? "Newest" : sort === "price_asc" ? "Price: Low to High" : "Price: High to Low"}
+              <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setSort("newest")}>Newest Arrivals</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSort("price_asc")}>Price: Low to High</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSort("price_desc")}>Price: High to Low</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex gap-8">
-          {/* Sidebar Filters – Desktop */}
-          <aside className={`shrink-0 space-y-6 ${showFilters ? "fixed inset-0 z-50 overflow-y-auto bg-card p-6 lg:static lg:w-64 lg:bg-transparent lg:p-0" : "hidden lg:block lg:w-64"}`}>
-            {/* Mobile Close */}
-            <div className="flex items-center justify-between lg:hidden">
-              <h3 className="font-heading text-lg font-bold">Filters</h3>
-              <button onClick={() => setShowFilters(false)}>
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Sort */}
-            <div>
-              <h4 className="mb-3 font-heading text-sm font-semibold text-foreground">
-                Sort By
-              </h4>
-              <div className="space-y-1">
-                {SORT_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => setSortBy(option.value)}
-                    className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                      sortBy === option.value
-                        ? "bg-primary/10 font-medium text-primary"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* Sidebar Filters */}
+        <aside className="w-full md:w-64 shrink-0 space-y-6">
+          <div className="rounded-2xl border border-border/50 bg-card p-6">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <Filter className="h-4 w-4" /> Filters
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium mb-3">Categories</h4>
+                <div className="space-y-2">
+                  {["All", "Bouquets", "Flower Pots", "Keychains", "Teddy Bears"].map(cat => (
+                    <label key={cat} className="flex items-center gap-2 text-sm cursor-pointer hover:text-primary transition-colors">
+                      <input 
+                        type="radio" 
+                        name="category" 
+                        value={cat === "All" ? "" : cat.toLowerCase().replace(" ", "-")}
+                        checked={cat === "All" ? category === "" : category === cat.toLowerCase().replace(" ", "-")}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className="rounded-full text-primary focus:ring-primary accent-primary"
+                      />
+                      {cat}
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
+          </div>
+        </aside>
 
-            <Separator />
-
-            {/* Categories */}
-            <div>
-              <h4 className="mb-3 font-heading text-sm font-semibold text-foreground">
-                Categories
-              </h4>
-              <div className="space-y-1">
-                {categories.slice(0, 8).map((cat) => (
-                  <button
-                    key={cat.slug}
-                    onClick={() => toggleCategory(cat.slug)}
-                    className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                      selectedCategories.includes(cat.slug)
-                        ? "bg-primary/10 font-medium text-primary"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    }`}
-                  >
-                    <span>{cat.icon}</span>
-                    {cat.name}
-                  </button>
-                ))}
-              </div>
+        {/* Product Grid */}
+        <main className="flex-1">
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-
-            {/* Clear Filters */}
-            {hasActiveFilters && (
-              <>
-                <Separator />
-                <Button
-                  variant="outline"
-                  onClick={clearFilters}
-                  className="w-full rounded-xl"
-                >
-                  Clear All Filters
-                </Button>
-              </>
-            )}
-
-            {/* Mobile Apply */}
-            <div className="lg:hidden">
-              <Button
-                onClick={() => setShowFilters(false)}
-                className="w-full rounded-xl bg-primary"
-              >
-                Show {filteredProducts.length} Results
+          ) : products.length === 0 ? (
+            <div className="text-center py-20 bg-card rounded-2xl border border-border/50">
+              <p className="text-lg text-muted-foreground">No products found matching your criteria.</p>
+              <Button variant="outline" className="mt-4" onClick={() => { setSearch(""); setCategory(""); }}>
+                Clear Filters
               </Button>
             </div>
-          </aside>
-
-          {/* Product Grid */}
-          <div className="flex-1">
-            {/* Active Filters & Count */}
-            <div className="mb-6 flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}
-              </span>
-
-              {selectedCategories.map((slug) => {
-                const cat = categories.find((c) => c.slug === slug);
-                return (
-                  <Badge
-                    key={slug}
-                    variant="secondary"
-                    className="cursor-pointer gap-1"
-                    onClick={() => toggleCategory(slug)}
-                  >
-                    {cat?.icon} {cat?.name}
-                    <X className="h-3 w-3" />
-                  </Badge>
-                );
-              })}
-            </div>
-
-            {filteredProducts.length > 0 ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3"
-              >
-                {filteredProducts.map((product, index) => (
-                  <ProductCard key={product.id} product={product} index={index} />
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.map((product) => (
+                  <Link href={`/shop/${product.slug}`} key={product.id} className="group flex flex-col rounded-2xl border border-border/50 bg-card overflow-hidden hover:shadow-lg transition-all duration-300">
+                    <div className="relative aspect-[4/5] bg-muted overflow-hidden">
+                      {/* Using mock image placeholder if no images exist */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img 
+                        src={product.images?.[0]?.url || "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?q=80&w=1000&auto=format&fit=crop"} 
+                        alt={product.title}
+                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+                      />
+                      {product.discount > 0 && (
+                        <div className="absolute top-3 left-3 bg-destructive text-destructive-foreground text-xs font-bold px-2 py-1 rounded-full shadow-sm">
+                          -{product.discount}%
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-5 flex-1 flex flex-col">
+                      <div className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">{product.category?.name}</div>
+                      <h3 className="font-medium text-lg mb-2 line-clamp-1">{product.title}</h3>
+                      <div className="mt-auto flex items-center justify-between">
+                        <div className="font-bold text-lg">
+                          ${(product.price - (product.price * (product.discount || 0)) / 100).toFixed(2)}
+                          {product.discount > 0 && (
+                            <span className="ml-2 text-sm text-muted-foreground line-through font-normal">
+                              ${product.price.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
                 ))}
-              </motion.div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="mb-4 text-6xl">🔍</div>
-                <h3 className="mb-2 font-heading text-xl font-bold text-foreground">
-                  No products found
-                </h3>
-                <p className="mb-6 text-sm text-muted-foreground">
-                  Try adjusting your search or filter criteria
-                </p>
-                <Button variant="outline" onClick={clearFilters} className="rounded-xl">
-                  Clear Filters
-                </Button>
               </div>
-            )}
-          </div>
-        </div>
+              
+              {/* Infinite Scroll Target */}
+              <div ref={observerTarget} className="h-20 flex items-center justify-center mt-8">
+                {loadingMore && <Loader2 className="h-6 w-6 animate-spin text-primary" />}
+                {!nextCursor && products.length > 0 && (
+                  <p className="text-muted-foreground text-sm">You&apos;ve reached the end of the collection.</p>
+                )}
+              </div>
+            </>
+          )}
+        </main>
       </div>
     </div>
   );

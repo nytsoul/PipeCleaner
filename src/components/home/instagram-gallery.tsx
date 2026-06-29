@@ -49,6 +49,7 @@ export function InstagramGallery() {
                   src={post.image}
                   alt={`Instagram post ${post.id}`}
                   fill
+                  sizes="(max-width: 640px) 50vw, 20vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 

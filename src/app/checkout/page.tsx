@@ -1,229 +1,240 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { motion } from "motion/react";
-import { ChevronLeft, CreditCard, MapPin, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CreditCard, CheckCircle2 } from "lucide-react";
+import { useCartStore } from "@/store/useCartStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { useCart } from "@/context/cart-context";
-import { CURRENCY, FREE_DELIVERY_THRESHOLD, DELIVERY_CHARGE } from "@/lib/constants";
-import { cn } from "@/lib/utils";
-
-const steps = [
-  { id: 1, label: "Shipping", icon: MapPin },
-  { id: 2, label: "Payment", icon: CreditCard },
-  { id: 3, label: "Confirm", icon: Check },
-];
+import { Label } from "@/components/ui/label";
 
 export default function CheckoutPage() {
-  const { items, subtotal, total, couponDiscount } = useCart();
-  const [currentStep, setCurrentStep] = useState(1);
-  const deliveryCharge = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_CHARGE;
-  const finalTotal = total + deliveryCharge;
+  const router = useRouter();
+  const { cart, getTotal, getSubtotal, getTax, getShipping, getDiscount, clearCart } = useCartStore();
+  
+  const [step, setStep] = useState(1);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("STRIPE");
 
-  if (items.length === 0) {
+  const [shippingDetails, setShippingDetails] = useState({
+    fullName: "",
+    email: "",
+    address: "",
+    city: "",
+    postalCode: "",
+    country: "US"
+  });
+
+  const handleNextStep = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStep(2);
+  };
+
+  const processMockPayment = async () => {
+    setIsProcessing(true);
+    
+    try {
+      const endpoint = paymentMethod === "STRIPE" ? "/api/checkout/stripe" : "/api/checkout/razorpay";
+      
+      // 1. Create order
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: cart,
+          totalAmount: getTotal(),
+          shippingAddress: shippingDetails
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error);
+
+      // 2. Mock payment success webhook
+      await fetch("/api/webhooks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: data.orderId,
+          paymentStatus: "PAID",
+          transactionId: paymentMethod === "STRIPE" ? "pi_mock_123" : "pay_mock_123"
+        })
+      });
+
+      // 3. Clear cart & redirect
+      clearCart();
+      router.push(`/checkout/success?orderId=${data.orderId}`);
+    } catch (error) {
+      console.error("Payment failed", error);
+      alert("Payment failed. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  if (cart.length === 0 && step === 1) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
-        <div className="text-center">
-          <div className="mb-4 text-6xl">🛍️</div>
-          <h1 className="mb-2 font-heading text-2xl font-bold">No items to checkout</h1>
-          <p className="mb-6 text-muted-foreground">Add some products to your cart first.</p>
-          <Button asChild className="rounded-xl">
-            <Link href="/shop">Go Shopping</Link>
-          </Button>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 py-24 text-center">
+        <h1 className="text-3xl font-bold mb-4">Your cart is empty</h1>
+        <Button onClick={() => router.push("/shop")}>Return to Shop</Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        {/* Back */}
-        <Link
-          href="/cart"
-          className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back to Cart
-        </Link>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="text-4xl font-heading font-bold mb-12">Secure Checkout</h1>
 
-        <h1 className="mb-8 font-heading text-2xl font-bold text-foreground sm:text-3xl">
-          Checkout
-        </h1>
-
-        {/* Step Indicator */}
-        <div className="mb-10 flex items-center justify-center">
-          {steps.map((step, i) => (
-            <div key={step.id} className="flex items-center">
-              <div
-                className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition-all",
-                  currentStep >= step.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
-                )}
-              >
-                {currentStep > step.id ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  step.id
-                )}
-              </div>
-              <span
-                className={cn(
-                  "ml-2 text-sm font-medium hidden sm:inline",
-                  currentStep >= step.id ? "text-foreground" : "text-muted-foreground"
-                )}
-              >
-                {step.label}
-              </span>
-              {i < steps.length - 1 && (
-                <div
-                  className={cn(
-                    "mx-4 h-px w-12 sm:w-20",
-                    currentStep > step.id ? "bg-primary" : "bg-border"
-                  )}
-                />
-              )}
+      <div className="grid lg:grid-cols-3 gap-12">
+        <div className="lg:col-span-2 space-y-8">
+          
+          {/* Step 1: Shipping */}
+          <div className={`p-6 rounded-2xl border ${step === 1 ? 'border-primary ring-1 ring-primary' : 'border-border'} bg-card shadow-sm transition-all`}>
+            <div className="flex items-center gap-4 mb-6">
+              <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">1</div>
+              <h2 className="text-2xl font-bold">Shipping Details</h2>
+              {step > 1 && <CheckCircle2 className="h-6 w-6 text-green-500 ml-auto" />}
             </div>
-          ))}
-        </div>
 
-        <div className="grid gap-8 lg:grid-cols-5">
-          {/* Form Area */}
-          <div className="lg:col-span-3">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {currentStep === 1 && (
-                <div className="rounded-2xl bg-card p-6 ring-1 ring-foreground/5">
-                  <h2 className="mb-6 font-heading text-lg font-bold">Shipping Address</h2>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Input placeholder="Full Name" className="h-11 rounded-xl" />
-                    <Input placeholder="Phone Number" className="h-11 rounded-xl" />
-                    <Input placeholder="Address Line 1" className="h-11 rounded-xl sm:col-span-2" />
-                    <Input placeholder="Address Line 2 (Optional)" className="h-11 rounded-xl sm:col-span-2" />
-                    <Input placeholder="City" className="h-11 rounded-xl" />
-                    <Input placeholder="State" className="h-11 rounded-xl" />
-                    <Input placeholder="PIN Code" className="h-11 rounded-xl" />
-                    <Input placeholder="Country" defaultValue="India" className="h-11 rounded-xl" />
+            {step === 1 ? (
+              <form onSubmit={handleNextStep} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <Input id="fullName" required value={shippingDetails.fullName} onChange={e => setShippingDetails({...shippingDetails, fullName: e.target.value})} />
                   </div>
-                  <Button
-                    onClick={() => setCurrentStep(2)}
-                    className="mt-6 h-11 w-full rounded-xl bg-primary"
-                  >
-                    Continue to Payment
-                  </Button>
-                </div>
-              )}
-
-              {currentStep === 2 && (
-                <div className="rounded-2xl bg-card p-6 ring-1 ring-foreground/5">
-                  <h2 className="mb-6 font-heading text-lg font-bold">Payment Method</h2>
-                  <div className="space-y-3">
-                    {["Credit/Debit Card", "UPI", "Net Banking", "Cash on Delivery"].map((method) => (
-                      <label
-                        key={method}
-                        className="flex cursor-pointer items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:bg-muted/50"
-                      >
-                        <input type="radio" name="payment" className="h-4 w-4 text-primary" defaultChecked={method === "Credit/Debit Card"} />
-                        <span className="text-sm font-medium">{method}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <div className="mt-6 flex gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => setCurrentStep(1)}
-                      className="h-11 flex-1 rounded-xl"
-                    >
-                      Back
-                    </Button>
-                    <Button
-                      onClick={() => setCurrentStep(3)}
-                      className="h-11 flex-1 rounded-xl bg-primary"
-                    >
-                      Review Order
-                    </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" required value={shippingDetails.email} onChange={e => setShippingDetails({...shippingDetails, email: e.target.value})} />
                   </div>
                 </div>
-              )}
-
-              {currentStep === 3 && (
-                <div className="rounded-2xl bg-card p-6 ring-1 ring-foreground/5">
-                  <h2 className="mb-6 font-heading text-lg font-bold">Order Confirmation</h2>
-                  <div className="space-y-4">
-                    {items.map((item) => (
-                      <div key={item.product.id} className="flex items-center gap-4">
-                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted/30">
-                          <Image
-                            src={item.product.images[0]}
-                            alt={item.product.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{item.product.name}</div>
-                          <div className="text-xs text-muted-foreground">Qty: {item.quantity}</div>
-                        </div>
-                        <div className="text-sm font-semibold">
-                          {CURRENCY}{(item.product.price * item.quantity).toLocaleString("en-IN")}
-                        </div>
-                      </div>
-                    ))}
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input id="address" required value={shippingDetails.address} onChange={e => setShippingDetails({...shippingDetails, address: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2 col-span-1">
+                    <Label htmlFor="city">City</Label>
+                    <Input id="city" required value={shippingDetails.city} onChange={e => setShippingDetails({...shippingDetails, city: e.target.value})} />
                   </div>
-                  <div className="mt-6 flex gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => setCurrentStep(2)}
-                      className="h-11 flex-1 rounded-xl"
-                    >
-                      Back
-                    </Button>
-                    <Button className="h-11 flex-1 rounded-xl bg-accent text-accent-foreground hover:bg-accent/90">
-                      Place Order — {CURRENCY}{finalTotal.toLocaleString("en-IN")}
-                    </Button>
+                  <div className="space-y-2 col-span-1">
+                    <Label htmlFor="postalCode">Postal Code</Label>
+                    <Input id="postalCode" required value={shippingDetails.postalCode} onChange={e => setShippingDetails({...shippingDetails, postalCode: e.target.value})} />
+                  </div>
+                  <div className="space-y-2 col-span-1">
+                    <Label htmlFor="country">Country</Label>
+                    <Input id="country" required value={shippingDetails.country} onChange={e => setShippingDetails({...shippingDetails, country: e.target.value})} />
                   </div>
                 </div>
-              )}
-            </motion.div>
+                <Button type="submit" className="w-full mt-4">Continue to Payment</Button>
+              </form>
+            ) : (
+              <div className="text-muted-foreground flex justify-between items-center">
+                <p>{shippingDetails.fullName}, {shippingDetails.address}, {shippingDetails.city} {shippingDetails.postalCode}</p>
+                <Button variant="ghost" onClick={() => setStep(1)}>Edit</Button>
+              </div>
+            )}
           </div>
 
-          {/* Summary Sidebar */}
-          <div className="lg:col-span-2">
-            <div className="sticky top-24 rounded-2xl bg-card p-6 ring-1 ring-foreground/5">
-              <h3 className="mb-4 font-heading text-base font-bold">Order Summary</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>{CURRENCY}{subtotal.toLocaleString("en-IN")}</span>
+          {/* Step 2: Payment */}
+          <div className={`p-6 rounded-2xl border ${step === 2 ? 'border-primary ring-1 ring-primary' : 'border-border'} bg-card shadow-sm opacity-${step === 2 ? '100' : '50 pointer-events-none'} transition-all`}>
+            <div className="flex items-center gap-4 mb-6">
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${step === 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>2</div>
+              <h2 className="text-2xl font-bold">Payment Method</h2>
+            </div>
+
+            {step === 2 && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => setPaymentMethod("STRIPE")}
+                    className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-3 transition-colors ${paymentMethod === "STRIPE" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                  >
+                    <CreditCard className="h-8 w-8" />
+                    <span className="font-semibold">Credit Card / GPay</span>
+                    <span className="text-xs text-muted-foreground">Via Stripe</span>
+                  </button>
+                  <button 
+                    onClick={() => setPaymentMethod("RAZORPAY")}
+                    className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-3 transition-colors ${paymentMethod === "RAZORPAY" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                  >
+                    <div className="font-bold text-xl tracking-wider text-blue-600">RZP</div>
+                    <span className="font-semibold">UPI / Net Banking</span>
+                    <span className="text-xs text-muted-foreground">Via Razorpay</span>
+                  </button>
                 </div>
-                {couponDiscount > 0 && (
-                  <div className="flex justify-between text-success">
-                    <span>Discount</span>
-                    <span>-{couponDiscount}%</span>
+
+                <div className="bg-muted p-6 rounded-xl border border-border">
+                  {paymentMethod === "STRIPE" ? (
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground text-center mb-4">
+                        This is a simulated Stripe integration. In production, the Stripe Elements UI would render here.
+                      </p>
+                      <Button size="lg" className="w-full" onClick={processMockPayment} disabled={isProcessing}>
+                        {isProcessing ? "Processing..." : `Pay $${getTotal().toFixed(2)} with Stripe`}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground text-center mb-4">
+                        This is a simulated Razorpay integration. In production, this would open the Razorpay popup.
+                      </p>
+                      <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={processMockPayment} disabled={isProcessing}>
+                        {isProcessing ? "Processing..." : `Pay $${getTotal().toFixed(2)} with Razorpay`}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        {/* Order Summary */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-28 rounded-3xl border border-border bg-card p-6 shadow-xl space-y-6">
+            <h2 className="text-xl font-heading font-bold">Order Summary</h2>
+            
+            <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
+              {cart.map(item => (
+                <div key={`${item.id}-${item.variant}`} className="flex gap-4">
+                  <div className="w-16 h-16 rounded-lg bg-muted overflow-hidden shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Delivery</span>
-                  <span className={deliveryCharge === 0 ? "text-success" : ""}>
-                    {deliveryCharge === 0 ? "FREE" : `${CURRENCY}${deliveryCharge}`}
-                  </span>
+                  <div className="flex-1 text-sm">
+                    <p className="font-bold line-clamp-1">{item.title}</p>
+                    <p className="text-muted-foreground">Qty: {item.quantity}</p>
+                    <p className="font-bold">${(item.price * item.quantity).toFixed(2)}</p>
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            <div className="border-t border-border pt-4 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>${getSubtotal().toFixed(2)}</span>
               </div>
-              <Separator className="my-4" />
-              <div className="flex justify-between font-heading text-lg font-bold">
-                <span>Total</span>
-                <span>{CURRENCY}{finalTotal.toLocaleString("en-IN")}</span>
+              <div className="flex justify-between text-primary">
+                <span>Discount</span>
+                <span>-${getDiscount().toFixed(2)}</span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Tax</span>
+                <span>${getTax().toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Shipping</span>
+                <span>${getShipping().toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="border-t border-border pt-4 flex justify-between items-end">
+              <span className="font-bold">Total</span>
+              <span className="text-2xl font-bold">${getTotal().toFixed(2)}</span>
             </div>
           </div>
         </div>

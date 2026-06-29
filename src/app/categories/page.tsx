@@ -34,6 +34,7 @@ export default function CategoriesPage() {
                   src={category.image}
                   alt={category.name}
                   fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
                 {/* Gradient Overlay */}

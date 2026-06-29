@@ -17,14 +17,18 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock data for orders
-    setOrders([
-      { id: "ORD-001", customerName: "Alice Smith", email: "alice@example.com", amount: 125.00, status: "PENDING", date: "2023-11-20" },
-      { id: "ORD-002", customerName: "Bob Johnson", email: "bob@example.com", amount: 89.99, status: "APPROVED", date: "2023-11-19" },
-      { id: "ORD-003", customerName: "Charlie Brown", email: "charlie@example.com", amount: 249.50, status: "DELIVERED", date: "2023-11-18" },
-      { id: "ORD-004", customerName: "Diana Prince", email: "diana@example.com", amount: 45.00, status: "CANCELLED", date: "2023-11-17" },
-    ]);
-    setLoading(false);
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch("/api/orders");
+        const data = await res.json();
+        setOrders(data || []);
+      } catch (error) {
+        console.error("Failed to fetch orders:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
   }, []);
 
   const updateStatus = (id: string, newStatus: string) => {
@@ -99,11 +103,9 @@ export default function AdminOrdersPage() {
                     <td className="px-6 py-4 text-muted-foreground">{order.date}</td>
                     <td className="px-6 py-4 text-right">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
+                        <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors cursor-pointer">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
