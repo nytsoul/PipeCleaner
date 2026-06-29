@@ -7,8 +7,7 @@ import { Heart, ShoppingBag, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/shared/star-rating";
 import { PriceDisplay } from "@/components/shared/price-display";
-import { useCart } from "@/context/cart-context";
-import { useWishlist } from "@/context/wishlist-context";
+import { useCartStore } from "@/store/useCartStore";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types";
 
@@ -18,10 +17,49 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, index = 0 }: ProductCardProps) {
-  const { addItem, isInCart } = useCart();
-  const { toggleItem, isInWishlist } = useWishlist();
-  const wishlisted = isInWishlist(product.id);
-  const inCart = isInCart(product.id);
+  const cart = useCartStore((state) => state.cart);
+  const wishlist = useCartStore((state) => state.wishlist);
+  const addToCart = useCartStore((state) => state.addToCart);
+  const addToWishlist = useCartStore((state) => state.addToWishlist);
+  const removeFromWishlist = useCartStore((state) => state.removeFromWishlist);
+
+  const inCart = cart.some((item) => item.id === product.id);
+  const wishlisted = wishlist.some((item) => item.id === product.id);
+
+  const handleAddToCart = () => {
+    const imageUrl = Array.isArray(product.images)
+      ? typeof product.images[0] === "string"
+        ? product.images[0]
+        : (product.images[0] as any)?.url || ""
+      : "";
+
+    addToCart({
+      id: product.id,
+      title: product.name || (product as any).title,
+      price: product.price - (product.price * (product.discount || 0)) / 100,
+      image: imageUrl,
+      quantity: 1,
+    });
+  };
+
+  const handleToggleWishlist = () => {
+    if (wishlisted) {
+      removeFromWishlist(product.id);
+    } else {
+      const imageUrl = Array.isArray(product.images)
+        ? typeof product.images[0] === "string"
+          ? product.images[0]
+          : (product.images[0] as any)?.url || ""
+        : "";
+
+      addToWishlist({
+        id: product.id,
+        title: product.name || (product as any).title,
+        price: product.price - (product.price * (product.discount || 0)) / 100,
+        image: imageUrl,
+      });
+    }
+  };
 
   return (
     <motion.div
@@ -64,7 +102,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
 
           {/* Wishlist Button */}
           <button
-            onClick={() => toggleItem(product)}
+            onClick={handleToggleWishlist}
             className={cn(
               "absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full shadow-md transition-all duration-300",
               wishlisted
@@ -81,7 +119,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
           {/* Quick Actions Overlay */}
           <div className="absolute inset-x-0 bottom-0 flex translate-y-full items-center justify-center gap-2 bg-gradient-to-t from-black/60 to-transparent p-4 transition-transform duration-500 group-hover:translate-y-0">
             <button
-              onClick={() => addItem(product)}
+              onClick={handleAddToCart}
               disabled={inCart}
               className={cn(
                 "flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium shadow-lg transition-all",

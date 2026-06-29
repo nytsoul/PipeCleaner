@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Inter } from "next/font/google";
 import { ThemeProvider } from "@/context/theme-context";
-import { CartProvider } from "@/context/cart-context";
-import { WishlistProvider } from "@/context/wishlist-context";
 import { SessionProvider } from "@/components/providers/session-provider";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
+import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import "./globals.css";
 
 const inter = Inter({
@@ -60,13 +57,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-body antialiased">
         <SessionProvider>
           <ThemeProvider>
-            <CartProvider>
-              <WishlistProvider>
-                <Navbar />
-                <main className="flex-1 pt-16 lg:pt-20">{children}</main>
-                <Footer />
-              </WishlistProvider>
-            </CartProvider>
+            <LayoutWrapper>{children}</LayoutWrapper>
           </ThemeProvider>
         </SessionProvider>
       </body>

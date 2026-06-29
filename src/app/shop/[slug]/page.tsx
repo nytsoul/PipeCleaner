@@ -8,14 +8,15 @@ import AddToCartButton from "./AddToCartButton";
 import RecentlyViewedTracker from "./RecentlyViewedTracker";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export default async function ProductPage({ params }: PageProps) {
+  const { slug } = await params;
   const product = await prisma.product.findUnique({
-    where: { slug: params.slug },
+    where: { slug },
     include: {
       category: true,
       images: true,
@@ -83,9 +84,11 @@ export default async function ProductPage({ params }: PageProps) {
         {/* Product Info */}
         <div className="flex flex-col">
           <div className="mb-2 flex items-center gap-2">
-            <Link href={`/shop?category=${product.category.slug}`} className="text-sm text-primary hover:underline font-medium uppercase tracking-wider">
-              {product.category.name}
-            </Link>
+            {product.category && (
+              <Link href={`/shop?category=${product.category.slug}`} className="text-sm text-primary hover:underline font-medium uppercase tracking-wider">
+                {product.category.name}
+              </Link>
+            )}
           </div>
           
           <h1 className="text-4xl font-heading font-bold mb-4">{product.title}</h1>

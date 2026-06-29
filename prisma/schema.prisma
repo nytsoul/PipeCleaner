@@ -89,8 +89,8 @@ model Product {
   materials         String?
   dimensions        String?
   isFeatured        Boolean          @default(false)
-  categoryId        String
-  category          Category         @relation(fields: [categoryId], references: [id])
+  categoryId        String?
+  category          Category?        @relation(fields: [categoryId], references: [id])
   images            ProductImage[]
   variants          ProductVariant[]
   tags              Tag[]            @relation("ProductTags")

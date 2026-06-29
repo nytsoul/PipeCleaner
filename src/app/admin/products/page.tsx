@@ -31,6 +31,23 @@ export default function AdminProductsPage() {
     fetchProducts();
   }, []);
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+    try {
+      const res = await fetch(`/api/products/${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setProducts(prev => prev.filter(p => p.id !== id));
+      } else {
+        alert("Failed to delete product");
+      }
+    } catch (error) {
+      console.error("Delete product error:", error);
+      alert("Something went wrong");
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -83,7 +100,22 @@ export default function AdminProductsPage() {
               ) : (
                 products.map((product) => (
                   <tr key={product.id} className="bg-card/30 hover:bg-muted/30 transition-colors">
-                    <td className="px-6 py-4 font-medium">{product.title}</td>
+                    <td className="px-6 py-4 font-medium flex items-center gap-3">
+                      <div className="relative h-10 w-10 rounded-lg overflow-hidden border border-border bg-muted flex-shrink-0">
+                        {product.images?.[0]?.url ? (
+                          <img 
+                            src={product.images[0].url} 
+                            alt={product.title} 
+                            className="object-cover w-full h-full"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground font-bold bg-muted">
+                            N/A
+                          </div>
+                        )}
+                      </div>
+                      <span>{product.title}</span>
+                    </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-muted/50">
                         {product.category?.name || "Uncategorized"}
@@ -111,7 +143,10 @@ export default function AdminProductsPage() {
                               <Edit className="h-4 w-4" /> Edit
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer flex items-center gap-2">
+                          <DropdownMenuItem 
+                            className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer flex items-center gap-2"
+                            onClick={() => handleDelete(product.id)}
+                          >
                             <Trash2 className="h-4 w-4" /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>

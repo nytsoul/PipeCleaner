@@ -202,7 +202,7 @@ export default function CheckoutPage() {
                 <div key={`${item.id}-${item.variant}`} className="flex gap-4">
                   <div className="w-16 h-16 rounded-lg bg-muted overflow-hidden shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                    <img src={item.image || undefined} alt={item.title} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 text-sm">
                     <p className="font-bold line-clamp-1">{item.title}</p>

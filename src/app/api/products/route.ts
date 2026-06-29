@@ -93,3 +93,76 @@ export async function GET(req: Request) {
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const {
+      title,
+      description,
+      price,
+      discount,
+      stock,
+      sku,
+      materials,
+      dimensions,
+      estimatedDelivery,
+      categorySlug,
+      images = [],
+      variants = [],
+      tags = [],
+    } = body;
+
+    // Upsert the category
+    const slug = title
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/[\s_-]+/g, "-");
+
+    // Find or create category
+    let catId: string | undefined = undefined;
+    if (categorySlug) {
+      let cat = await prisma.category.findUnique({ where: { slug: categorySlug } });
+      if (!cat) {
+        cat = await prisma.category.create({
+          data: { name: categorySlug, slug: categorySlug },
+        });
+      }
+      catId = cat.id;
+    }
+
+    const product = await prisma.product.create({
+      data: {
+        title,
+        slug: `${slug}-${Date.now()}`,
+        description,
+        price: parseFloat(price),
+        discount: discount ? parseFloat(discount) : 0,
+        stock: parseInt(stock),
+        sku: sku || undefined,
+        materials: materials || undefined,
+        dimensions: dimensions || undefined,
+        estimatedDelivery: estimatedDelivery || undefined,
+        categoryId: catId,
+        images: {
+          create: images.map((url: string) => ({ url })),
+        },
+        variants: {
+          create: variants.map((color: string) => ({ color, stock: 0 })),
+        },
+        tags: {
+          connectOrCreate: tags.map((name: string) => ({
+            where: { name },
+            create: { name },
+          })),
+        },
+      },
+      include: { category: true, images: true, tags: true, variants: true },
+    });
+
+    return NextResponse.json({ success: true, data: product }, { status: 201 });
+  } catch (error) {
+    console.error("Create Product Error:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}

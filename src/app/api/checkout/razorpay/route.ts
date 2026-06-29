@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 export async function POST(req: Request) {
   try {
-    const { items, totalAmount, userId, shippingAddress } = await req.json();
+    const session = await auth();
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { items, totalAmount, shippingAddress } = await req.json();
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
@@ -15,7 +23,7 @@ export async function POST(req: Request) {
     // Create Order in Database
     const order = await prisma.order.create({
       data: {
-        userId: userId || "guest_id",
+        userId,
         totalAmount,
         paymentMethod: "RAZORPAY",
         paymentStatus: "PENDING",

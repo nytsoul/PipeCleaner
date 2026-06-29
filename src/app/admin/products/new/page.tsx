@@ -74,13 +74,37 @@ export default function NewProductPage() {
     setTags(tags.filter(item => item !== t));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [sku, setSku] = useState("");
+  const [materials, setMaterials] = useState("");
+  const [dimensions, setDimensions] = useState("");
+  const [estimatedDelivery, setEstimatedDelivery] = useState("");
+  const [price, setPrice] = useState("");
+  const [discount, setDiscount] = useState("");
+  const [stock, setStock] = useState("");
+  const [category, setCategory] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setError("");
+    try {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title, description, sku, materials, dimensions, estimatedDelivery,
+          price, discount, stock, categorySlug: category, images, variants, tags,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to create product");
       window.location.href = "/admin/products";
-    }, 1000);
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -100,6 +124,11 @@ export default function NewProductPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {error && (
+          <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-4 text-sm text-destructive">
+            {error}
+          </div>
+        )}
         <div className="grid gap-8 md:grid-cols-3">
           {/* Main Details */}
           <div className="md:col-span-2 space-y-8">
@@ -109,7 +138,7 @@ export default function NewProductPage() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Product Name</Label>
-                  <Input id="title" placeholder="e.g. Handmade Rose Bouquet" required />
+                  <Input id="title" placeholder="e.g. Handmade Rose Bouquet" required value={title} onChange={e => setTitle(e.target.value)} />
                 </div>
                 
                 <div className="space-y-2">
@@ -118,29 +147,31 @@ export default function NewProductPage() {
                     id="description" 
                     placeholder="Describe the handmade details..." 
                     rows={4}
-                    required 
+                    required
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="sku">SKU</Label>
-                    <Input id="sku" placeholder="e.g. RB-001" />
+                    <Input id="sku" placeholder="e.g. RB-001" value={sku} onChange={e => setSku(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="materials">Materials</Label>
-                    <Input id="materials" placeholder="e.g. Premium Pipe Cleaners" />
+                    <Input id="materials" placeholder="e.g. Premium Pipe Cleaners" value={materials} onChange={e => setMaterials(e.target.value)} />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="dimensions">Dimensions</Label>
-                    <Input id="dimensions" placeholder="e.g. 10x10x15 cm" />
+                    <Input id="dimensions" placeholder="e.g. 10x10x15 cm" value={dimensions} onChange={e => setDimensions(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="estimatedDelivery">Estimated Delivery</Label>
-                    <Input id="estimatedDelivery" placeholder="e.g. 3-5 Business Days" />
+                    <Input id="estimatedDelivery" placeholder="e.g. 3-5 Business Days" value={estimatedDelivery} onChange={e => setEstimatedDelivery(e.target.value)} />
                   </div>
                 </div>
               </div>
@@ -152,15 +183,15 @@ export default function NewProductPage() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price">Price ($)</Label>
-                  <Input id="price" type="number" step="0.01" min="0" placeholder="0.00" required />
+                  <Input id="price" type="number" step="0.01" min="0" placeholder="0.00" required value={price} onChange={e => setPrice(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="discount">Discount (%)</Label>
-                  <Input id="discount" type="number" step="1" min="0" max="100" placeholder="0" />
+                  <Input id="discount" type="number" step="1" min="0" max="100" placeholder="0" value={discount} onChange={e => setDiscount(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="stock">Stock</Label>
-                  <Input id="stock" type="number" min="0" placeholder="0" required />
+                  <Input id="stock" type="number" min="0" placeholder="0" required value={stock} onChange={e => setStock(e.target.value)} />
                 </div>
               </div>
             </div>
@@ -233,7 +264,7 @@ export default function NewProductPage() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Category</Label>
-                  <Select>
+                  <Select value={category} onValueChange={v => setCategory(v ?? "")}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>

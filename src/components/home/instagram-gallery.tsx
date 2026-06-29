@@ -13,13 +13,13 @@ const InstagramIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// Mock Instagram Posts (reusing product images for demonstration)
+// Mock Instagram Posts (using existing product images)
 const instagramPosts = [
-  { id: 1, image: "/images/sunflower-bouquet.jpg", likes: 245, comments: 12 },
-  { id: 2, image: "/images/teddy-bear.jpg", likes: 512, comments: 34 },
-  { id: 3, image: "/images/tulip-pot.jpg", likes: 189, comments: 8 },
-  { id: 4, image: "/images/sunflower-bouquet.jpg", likes: 432, comments: 21 },
-  { id: 5, image: "/images/tulip-pot.jpg", likes: 310, comments: 15 },
+  { id: 1, image: "/images/products/sunflower-arrangement.png", likes: 245, comments: 12 },
+  { id: 2, image: "/images/products/teddy-bear.png", likes: 512, comments: 34 },
+  { id: 3, image: "/images/products/tulip-flower-pot.png", likes: 189, comments: 8 },
+  { id: 4, image: "/images/products/rose-bouquet.png", likes: 432, comments: 21 },
+  { id: 5, image: "/images/products/mini-cactus.png", likes: 310, comments: 15 },
 ];
 
 export function InstagramGallery() {

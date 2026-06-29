@@ -101,7 +101,7 @@ export default function CartPage() {
                       {/* Image */}
                       <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl overflow-hidden bg-muted shrink-0">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                        <img src={item.image || undefined} alt={item.title} className="w-full h-full object-cover" />
                       </div>
                       
                       {/* Details */}
