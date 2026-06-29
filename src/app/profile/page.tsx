@@ -102,9 +102,11 @@ export default function ProfilePage() {
                       <div className="font-semibold text-foreground">
                         ₹{order.total.toLocaleString("en-IN")}
                       </div>
-                      <Button variant="ghost" size="sm" className="rounded-lg hidden sm:flex">
-                        View Details
-                        <ChevronRight className="ml-1 h-4 w-4" />
+                      <Button asChild variant="ghost" size="sm" className="rounded-lg">
+                        <Link href={`/profile/orders`}>
+                          View Details
+                          <ChevronRight className="ml-1 h-4 w-4" />
+                        </Link>
                       </Button>
                     </div>
                   </div>

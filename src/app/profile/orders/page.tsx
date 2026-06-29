@@ -82,7 +82,7 @@ export default async function OrdersPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Total</p>
-                  <p className="font-bold">${order.totalAmount.toFixed(2)}</p>
+                  <p className="font-bold">₹{order.totalAmount.toLocaleString("en-IN")}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Status</p>
@@ -122,7 +122,7 @@ export default async function OrdersPage() {
                       </div>
                       <div className="flex justify-between items-center mt-2">
                         <p className="text-muted-foreground">Qty: {item.quantity}</p>
-                        <p className="font-bold">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="font-bold">₹{(item.price * item.quantity).toLocaleString("en-IN")}</p>
                       </div>
                     </div>
                   </div>

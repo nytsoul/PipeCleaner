@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { motion } from "motion/react";
 import { Flower2, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -32,7 +32,13 @@ export default function LoginPage() {
       if (res?.error) {
         setError("Invalid credentials. Please try again.");
       } else {
-        router.push("/profile");
+        // Read the session to check role and redirect appropriately
+        const session = await getSession();
+        if (session?.user?.role === "ADMIN") {
+          router.push("/admin");
+        } else {
+          router.push("/profile");
+        }
         router.refresh();
       }
     } catch (err) {
