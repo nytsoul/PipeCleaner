@@ -18,6 +18,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
+    // Verify the user exists in the database (prevents FK violation on stale sessions)
+    const userExists = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!userExists) {
+      return NextResponse.json(
+        { error: "Session expired. Please sign out and sign in again." },
+        { status: 401 }
+      );
+    }
+
+    // Verify all product IDs exist (prevents FK violation on stale cart data)
+    const productIds: string[] = items.map((item: any) => item.id);
+    const existingProducts = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true }
+    });
+    if (existingProducts.length !== productIds.length) {
+      const foundIds = new Set(existingProducts.map((p) => p.id));
+      const missing = productIds.filter((id) => !foundIds.has(id));
+      return NextResponse.json(
+        { error: `Some cart items no longer exist: ${missing.join(", ")}` },
+        { status: 400 }
+      );
+    }
+
     const amountInPaise = Math.round(totalAmount * 100);
 
     // Create Order in Database
@@ -33,10 +57,10 @@ export async function POST(req: Request) {
             productId: item.id,
             quantity: item.quantity,
             price: item.price,
-            variant: item.variant
-          }))
-        }
-      }
+            variant: item.variant,
+          })),
+        },
+      },
     });
 
     if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
@@ -45,28 +69,26 @@ export async function POST(req: Request) {
         key_secret: process.env.RAZORPAY_KEY_SECRET,
       });
 
-      const options = {
+      const rzpOrder = await razorpay.orders.create({
         amount: amountInPaise,
-        currency: "INR", // Assuming INR for Razorpay, but could be USD
+        currency: "INR",
         receipt: order.id,
-      };
-
-      const rzpOrder = await razorpay.orders.create(options);
+      });
 
       return NextResponse.json({
         id: rzpOrder.id,
         currency: rzpOrder.currency,
         amount: rzpOrder.amount,
-        orderId: order.id
+        orderId: order.id,
       });
     } else {
-      // Mock mode
+      // Mock mode (no Razorpay keys configured)
       return NextResponse.json({
         id: "mock_rzp_order_id",
         currency: "INR",
         amount: amountInPaise,
         orderId: order.id,
-        mock: true
+        mock: true,
       });
     }
   } catch (error) {

@@ -26,6 +26,30 @@ export async function POST(req: Request) {
     // For now, we trust totalAmount for simulation purposes
     const amountInCents = Math.round(totalAmount * 100);
 
+    // Verify the user exists in the database (prevents FK violation on stale sessions)
+    const userExists = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!userExists) {
+      return NextResponse.json(
+        { error: "Session expired. Please sign out and sign in again." },
+        { status: 401 }
+      );
+    }
+
+    // Verify all product IDs exist (prevents FK violation on stale cart data)
+    const productIds: string[] = items.map((item: any) => item.id);
+    const existingProducts = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true },
+    });
+    if (existingProducts.length !== productIds.length) {
+      const foundIds = new Set(existingProducts.map((p) => p.id));
+      const missing = productIds.filter((id) => !foundIds.has(id));
+      return NextResponse.json(
+        { error: `Some cart items no longer exist: ${missing.join(", ")}` },
+        { status: 400 }
+      );
+    }
+
     // Create Order in Database
     const order = await prisma.order.create({
       data: {
@@ -39,11 +63,12 @@ export async function POST(req: Request) {
             productId: item.id,
             quantity: item.quantity,
             price: item.price,
-            variant: item.variant
-          }))
-        }
-      }
+            variant: item.variant,
+          })),
+        },
+      },
     });
+
 
     if (process.env.STRIPE_SECRET_KEY) {
       // Create a PaymentIntent with the order amount and currency

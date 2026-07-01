@@ -261,10 +261,16 @@ export default function EditProductPage() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="bouquets">Bouquets</SelectItem>
                     <SelectItem value="flower-pots">Flower Pots</SelectItem>
-                    <SelectItem value="keychains">Keychains</SelectItem>
+                    <SelectItem value="flower-bouquets">Flower Bouquets</SelectItem>
+                    <SelectItem value="sunflowers">Sunflowers</SelectItem>
                     <SelectItem value="teddy-bears">Teddy Bears</SelectItem>
+                    <SelectItem value="mini-plants">Mini Plants</SelectItem>
+                    <SelectItem value="keychains">Keychains</SelectItem>
+                    <SelectItem value="valentine-gifts">Valentine Gifts</SelectItem>
+                    <SelectItem value="tulips">Tulips</SelectItem>
+                    <SelectItem value="customized-gifts">Customized Gifts</SelectItem>
+                    <SelectItem value="birthday-gifts">Birthday Gifts</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -65,9 +65,9 @@ export default function CheckoutPage() {
       // 3. Clear cart & redirect
       clearCart();
       router.push(`/checkout/success?orderId=${data.orderId}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Payment failed", error);
-      alert("Payment failed. Please try again.");
+      alert(`Payment failed: ${error?.message || "Please try again."}`);
     } finally {
       setIsProcessing(false);
     }
@@ -172,7 +172,7 @@ export default function CheckoutPage() {
                         This is a simulated Stripe integration. In production, the Stripe Elements UI would render here.
                       </p>
                       <Button size="lg" className="w-full" onClick={processMockPayment} disabled={isProcessing}>
-                        {isProcessing ? "Processing..." : `Pay $${getTotal().toFixed(2)} with Stripe`}
+                        {isProcessing ? "Processing..." : `Pay ₹${getTotal().toFixed(2)} with Stripe`}
                       </Button>
                     </div>
                   ) : (
@@ -181,7 +181,7 @@ export default function CheckoutPage() {
                         This is a simulated Razorpay integration. In production, this would open the Razorpay popup.
                       </p>
                       <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={processMockPayment} disabled={isProcessing}>
-                        {isProcessing ? "Processing..." : `Pay $${getTotal().toFixed(2)} with Razorpay`}
+                        {isProcessing ? "Processing..." : `Pay ₹${getTotal().toFixed(2)} with Razorpay`}
                       </Button>
                     </div>
                   )}
@@ -207,7 +207,7 @@ export default function CheckoutPage() {
                   <div className="flex-1 text-sm">
                     <p className="font-bold line-clamp-1">{item.title}</p>
                     <p className="text-muted-foreground">Qty: {item.quantity}</p>
-                    <p className="font-bold">${(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-bold">₹${(item.price * item.quantity).toFixed(2)}</p>
                   </div>
                 </div>
               ))}
@@ -216,7 +216,7 @@ export default function CheckoutPage() {
             <div className="border-t border-border pt-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span>${getSubtotal().toFixed(2)}</span>
+                <span>₹${getSubtotal().toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-primary">
                 <span>Discount</span>
@@ -224,17 +224,17 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tax</span>
-                <span>${getTax().toFixed(2)}</span>
+                <span>₹${getTax().toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Shipping</span>
-                <span>${getShipping().toFixed(2)}</span>
+                <span>₹${getShipping().toFixed(2)}</span>
               </div>
             </div>
 
             <div className="border-t border-border pt-4 flex justify-between items-end">
               <span className="font-bold">Total</span>
-              <span className="text-2xl font-bold">${getTotal().toFixed(2)}</span>
+              <span className="text-2xl font-bold">₹${getTotal().toFixed(2)}</span>
             </div>
           </div>
         </div>

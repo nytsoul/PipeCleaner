@@ -165,7 +165,7 @@ export const useCartStore = create<CartState>()(
       },
 
       getShipping: () => {
-        return get().cart.length > 0 ? 5.00 : 0; // Flat $5 shipping
+        return get().cart.length > 0 ? 49 : 0; // Flat ₹49 shipping
       },
 
       getTotal: () => {

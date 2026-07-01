@@ -56,7 +56,7 @@ export default function RecentlyViewedTracker({ product }: { product: any }) {
             </div>
             <div className="p-4">
               <h4 className="font-medium line-clamp-1">{item.title}</h4>
-              <p className="text-muted-foreground mt-1">${item.price.toFixed(2)}</p>
+              <p className="text-muted-foreground mt-1">₹${item.price.toFixed(2)}</p>
             </div>
           </Link>
         ))}

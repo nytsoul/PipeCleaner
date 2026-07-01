@@ -41,7 +41,7 @@ export function Footer() {
   return (
     <footer className="bg-secondary text-secondary-foreground">
       {/* Main Footer */}
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-full px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="space-y-4">
@@ -168,7 +168,7 @@ export function Footer() {
 
       {/* Bottom Bar */}
       <Separator className="bg-white/10" />
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-full px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-between gap-4 text-xs text-secondary-foreground/50 sm:flex-row">
           <p>© {new Date().getFullYear()} {SITE_NAME}. All rights reserved. Made with ❤️ in India.</p>
           <div className="flex gap-6">

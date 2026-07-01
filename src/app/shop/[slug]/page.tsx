@@ -175,7 +175,7 @@ export default async function ProductPage({ params }: PageProps) {
                 </div>
                 <div className="p-4">
                   <h4 className="font-medium line-clamp-1">{rp.title}</h4>
-                  <p className="text-muted-foreground mt-1">${rp.price.toFixed(2)}</p>
+                  <p className="text-muted-foreground mt-1">₹${rp.price.toFixed(2)}</p>
                 </div>
               </Link>
             ))}

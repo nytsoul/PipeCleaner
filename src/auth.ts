@@ -45,4 +45,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  callbacks: {
+    ...authConfig.callbacks,
+    async signIn({ user, account }) {
+      if (user.email === "neshun7413@gmail.com") {
+        // Automatically ensure this specific email is an ADMIN in the database
+        await prisma.user.upsert({
+          where: { email: user.email },
+          update: { role: "ADMIN" },
+          create: {
+            email: user.email,
+            name: user.name || "Neshun Admin",
+            role: "ADMIN",
+          },
+        }).catch(console.error);
+        
+        // Also update the in-memory user object for this session
+        user.role = "ADMIN";
+      }
+      return true;
+    }
+  }
 });
